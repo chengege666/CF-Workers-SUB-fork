@@ -684,40 +684,29 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 						.cards-grid { grid-template-columns: 1fr; }
 						.header .title { font-size: 18px; }
 					}
-					/* ===== 解锁密码保护 ===== */
-					body.locked .container {
+					/* ===== 解锁密码保护（仅汇聚订阅编辑模块） ===== */
+					#editorSection.locked .editor-container {
 						filter: blur(20px);
 						pointer-events: none;
 						user-select: none;
 					}
-					.unlock-overlay {
-						position: fixed;
-						inset: 0;
-						z-index: 999;
-						display: flex;
-						align-items: center;
-						justify-content: center;
+					.unlock-box {
+						margin-bottom: 14px;
 						padding: 16px;
-						background: var(--bg);
-					}
-					.unlock-overlay.hidden { display: none; }
-					.unlock-card {
-						width: 100%;
-						max-width: 360px;
-						padding: 28px 24px;
-						background: var(--bg-card);
-						border: 1px solid var(--border);
-						border-radius: 12px;
+						background: rgba(167, 139, 250, 0.08);
+						border: 1px solid rgba(167, 139, 250, 0.4);
+						border-radius: 10px;
 						text-align: center;
 					}
-					.unlock-card h2 { margin: 0 0 6px; font-size: 18px; color: var(--text); }
-					.unlock-card p { margin: 0 0 14px; color: var(--text-dim); font-size: 13px; }
-					.unlock-error { margin: 0 0 12px; color: #f85149; font-size: 13px; min-height: 18px; }
-					.unlock-card input[type="password"] {
+					.unlock-box p { margin: 0 0 10px; color: var(--text-dim); font-size: 13px; }
+					.unlock-error { margin: 0 0 10px; color: #f85149; font-size: 13px; min-height: 18px; }
+					.unlock-box input[type="password"] {
+						display: block;
 						width: 100%;
+						max-width: 320px;
+						margin: 0 auto 12px;
 						padding: 10px 12px;
 						box-sizing: border-box;
-						margin-bottom: 12px;
 						background: rgba(13, 17, 23, 0.8);
 						color: var(--text);
 						border: 1px solid var(--border);
@@ -725,12 +714,15 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 						font-size: 14px;
 						outline: none;
 					}
-					.unlock-card input[type="password"]:focus {
+					.unlock-box input[type="password"]:focus {
 						border-color: var(--accent);
 						box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
 					}
 					.unlock-btn {
+						display: block;
 						width: 100%;
+						max-width: 320px;
+						margin: 0 auto;
 						padding: 10px;
 						color: #0d1117;
 						font-weight: 600;
@@ -746,15 +738,6 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 					<script src="https://cdn.jsdelivr.net/npm/@keeex/qrcodejs-kx@1.0.2/qrcode.min.js"></script>
 				</head>
 				<body>
-					<div class="unlock-overlay" id="unlockOverlay">
-						<div class="unlock-card">
-							<h2>${FileName} 订阅中心</h2>
-							<p>请输入管理密码解锁</p>
-							<p class="unlock-error" id="unlockError"></p>
-							<input type="password" id="unlockInput" placeholder="请输入密码" autocomplete="off">
-							<button class="unlock-btn" onclick="unlockPage()">解锁</button>
-						</div>
-					</div>
 					<div class="container">
 					<header class="header">
 						<h1 class="title">${FileName} 订阅中心</h1>
@@ -834,10 +817,16 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 							</div>
 						</div>
 					</section>
-					<section class="section">
+					<section class="section" id="editorSection">
 						<h2 class="section-title">${FileName} 汇聚订阅编辑</h2>
 						<div class="editor-container">
 						${hasKV ? `
+						<div class="unlock-box" id="unlockBox" style="display: none;">
+							<p>编辑功能已加密，请输入管理密码解锁</p>
+							<p class="unlock-error" id="unlockError"></p>
+							<input type="password" id="unlockInput" placeholder="请输入密码" autocomplete="off">
+							<button class="unlock-btn" onclick="unlockPage()">解锁</button>
+						</div>
 						<textarea class="editor" 
 							placeholder="${decodeURIComponent(atob('TElOSyVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNCVCOCVBQSVFOCU4QSU4MiVFNyU4MiVCOSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQp2bGVzcyUzQSUyRiUyRjI0NmFhNzk1LTA2MzctNGY0Yy04ZjY0LTJjOGZiMjRjMWJhZCU0MDEyNy4wLjAuMSUzQTEyMzQlM0ZlbmNyeXB0aW9uJTNEbm9uZSUyNnNlY3VyaXR5JTNEdGxzJTI2c25pJTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2YWxsb3dJbnNlY3VyZSUzRDElMjZ0eXBlJTNEd3MlMjZob3N0JTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2cGF0aCUzRCUyNTJGJTI1M0ZlZCUyNTNEMjU2MCUyM0NGbmF0CnRyb2phbiUzQSUyRiUyRmFhNmRkZDJmLWQxY2YtNGE1Mi1iYTFiLTI2NDBjNDFhNzg1NiU0MDIxOC4xOTAuMjMwLjIwNyUzQTQxMjg4JTNGc2VjdXJpdHklM0R0bHMlMjZzbmklM0RoazEyLmJpbGliaWxpLmNvbSUyNmFsbG93SW5zZWN1cmUlM0QxJTI2dHlwZSUzRHRjcCUyNmhlYWRlclR5cGUlM0Rub25lJTIzSEsKc3MlM0ElMkYlMkZZMmhoWTJoaE1qQXRhV1YwWmkxd2IyeDVNVE13TlRveVJYUlFjVzQyU0ZscVZVNWpTRzlvVEdaVmNFWlJkMjVtYWtORFVUVnRhREZ0U21SRlRVTkNkV04xVjFvNVVERjFaR3RTUzBodVZuaDFielUxYXpGTFdIb3lSbTgyYW5KbmRERTRWelkyYjNCMGVURmxOR0p0TVdwNlprTm1RbUklMjUzRCU0MDg0LjE5LjMxLjYzJTNBNTA4NDElMjNERQoKCiVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQpodHRwcyUzQSUyRiUyRnN1Yi54Zi5mcmVlLmhyJTJGYXV0bw=='))}"
 							id="content">${content}</textarea>
@@ -862,8 +851,10 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 						const error = document.getElementById('unlockError');
 						if (input.value === ADMIN_PASSWORD) {
 							localStorage.setItem(UNLOCK_KEY, '1');
-							document.getElementById('unlockOverlay').classList.add('hidden');
-							document.body.classList.remove('locked');
+							const box = document.getElementById('unlockBox');
+							if (box) box.style.display = 'none';
+							const section = document.getElementById('editorSection');
+							if (section) section.classList.remove('locked');
 						} else {
 							error.textContent = '密码错误，请重试';
 							input.value = '';
@@ -872,20 +863,16 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 					}
 
 					(function initUnlock() {
-						const overlay = document.getElementById('unlockOverlay');
+						const box = document.getElementById('unlockBox');
+						const section = document.getElementById('editorSection');
 						const input = document.getElementById('unlockInput');
-						if (!overlay || !input) return;
+						if (!box || !section || !input) return;
 						// 未配置 ADMIN_PASSWORD 环境变量时不启用锁定
-						if (!ADMIN_PASSWORD) {
-							overlay.classList.add('hidden');
-							return;
-						}
+						if (!ADMIN_PASSWORD) return;
 						// 本浏览器已解锁过则直接进入
-						if (localStorage.getItem(UNLOCK_KEY) === '1') {
-							overlay.classList.add('hidden');
-							return;
-						}
-						document.body.classList.add('locked');
+						if (localStorage.getItem(UNLOCK_KEY) === '1') return;
+						section.classList.add('locked');
+						box.style.display = 'block';
 						input.focus();
 						input.addEventListener('keydown', function (e) {
 							if (e.key === 'Enter') unlockPage();
