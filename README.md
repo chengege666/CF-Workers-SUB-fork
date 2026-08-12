@@ -17,7 +17,8 @@
 2. **将多个base64订阅汇聚成一个订阅链接：** 可以将多个订阅（例如不同的机场）合并成一个订阅，只需使用一个订阅地址即可获取所有节点；
 3. **自动适配不同梯子的格式订阅链接：** 依托[订阅转换](https://sub.cmliussss.com/)服务，自动将订阅转换为不同梯子所需的格式，实现一条订阅适配多种梯子；
 4. **专属代理分流规则：** 自定义分流规则，实现个性化的分流模式；
-5. **更多功能等待发掘...**
+5. **编辑页密码保护：** 可通过环境变量 `EDITPASS` 为汇聚订阅编辑页设置访问密码，未输入密码时不返回订阅内容，防止未授权查看和修改；
+6. **更多功能等待发掘...**
 
 ## 🎬 视频教程
 - **[自建订阅！CF-Workers-SUB 教你如何将多节点多订阅汇聚合并为一个订阅！](https://youtu.be/w6rRY4FDd58)**
@@ -107,10 +108,18 @@
 | SUBNAME | `CF-Workers-SUB` | ❌ | 订阅名称 |
 | SUBAPI | `SUBAPI.cmliussss.net` | ❌ | clash、singbox等 订阅转换后端 | 
 | SUBCONFIG | [https://raw.github.../ACL4SSR_Online_MultiCountry.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_MultiCountry.ini) | ❌ | clash、singbox等 订阅转换配置文件 | 
+| EDITPASS | `mypass123` | ❌ | 汇聚订阅编辑页访问密码。设置后访问编辑页需输入密码才可查看和编辑订阅内容；为空则不启用密码 | 
 
 
 ## ⚠️ 注意事项
 项目中，TGTOKEN和TGID在使用时需要先到Telegram注册并获取。其中，TGTOKEN是telegram bot的凭证，TGID是用来接收通知的telegram用户或者组的id。
+
+**EDITPASS 编辑密码说明：**
+- 在 Cloudflare 后台设置环境变量 `EDITPASS` 为你的密码（如 `mypass123`），即可启用编辑页密码保护；
+- 启用后访问编辑页（`/${TOKEN}`）时只显示密码框，不返回订阅内容；
+- 输入正确密码后会跳转至 `/${TOKEN}?pass=xxx` 才显示和编辑订阅内容；
+- 密码留空或不设置该变量时，保持原行为（无密码直接可编辑）；
+- 注意：密码会出现在 URL 参数中（`?pass=xxx`），请注意浏览器历史记录安全。
 
 
 ## ⭐ Star 星星走起

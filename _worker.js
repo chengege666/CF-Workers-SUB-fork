@@ -502,6 +502,11 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 		// POST请求处理
 		if (request.method === "POST") {
 			if (!env.KV) return new Response("未绑定KV空间", { status: 400 });
+			// 编辑密码校验
+			const editPass = env.EDITPASS || '';
+			if (editPass && request.headers.get('X-Edit-Pass') !== editPass) {
+				return new Response("密码错误或未提供", { status: 403 });
+			}
 			try {
 				const content = await request.text();
 				await env.KV.put(txt, content);
@@ -515,8 +520,11 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 		// GET请求部分
 		let content = '';
 		let hasKV = !!env.KV;
+		const editPass = env.EDITPASS || '';
+		const passParam = url.searchParams.get('pass') || '';
+		const passOk = !editPass || passParam === editPass;
 
-		if (hasKV) {
+		if (hasKV && passOk) {
 			try {
 				content = await env.KV.get(txt) || '';
 			} catch (error) {
@@ -675,6 +683,20 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 					.back-btn { background: var(--text-dim); }
 					.back-btn:hover { opacity: .85; }
 					.save-status { color: var(--text-dim); font-size: 12px; }
+					.pass-container { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+					.pass-input {
+						flex: 1;
+						padding: 8px 12px;
+						background: rgba(13, 17, 23, 0.8);
+						color: var(--text);
+						border: 1px solid var(--border);
+						border-radius: 6px;
+						font-size: 13px;
+						outline: none;
+					}
+					.pass-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15); }
+					.unlock-btn { padding: 8px 16px; white-space: nowrap; }
+					.pass-error { color: #f85149; font-size: 13px; margin-bottom: 8px; padding: 6px 10px; background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); border-radius: 6px; }
 					.footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 12px; line-height: 1.8; text-align: center; }
 					.footer a { color: var(--accent); text-decoration: none; }
 					.footer a:hover { text-decoration: underline; }
@@ -771,13 +793,21 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 						<h2 class="section-title">${FileName} 汇聚订阅编辑</h2>
 						<div class="editor-container">
 						${hasKV ? `
-						<textarea class="editor" 
+						${(editPass && !passOk) ? `
+						${passParam ? '<div class="pass-error">密码错误，请重试</div>' : ''}
+						<div class="pass-container">
+							<input type="password" id="editPassInput" class="pass-input" placeholder="输入编辑密码">
+							<button type="button" class="back-btn unlock-btn" onclick="enterPass()">进入</button>
+						</div>
+						` : `
+						<textarea class="editor"
 							placeholder="${decodeURIComponent(atob('TElOSyVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNCVCOCVBQSVFOCU4QSU4MiVFNyU4MiVCOSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQp2bGVzcyUzQSUyRiUyRjI0NmFhNzk1LTA2MzctNGY0Yy04ZjY0LTJjOGZiMjRjMWJhZCU0MDEyNy4wLjAuMSUzQTEyMzQlM0ZlbmNyeXB0aW9uJTNEbm9uZSUyNnNlY3VyaXR5JTNEdGxzJTI2c25pJTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2YWxsb3dJbnNlY3VyZSUzRDElMjZ0eXBlJTNEd3MlMjZob3N0JTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2cGF0aCUzRCUyNTJGJTI1M0ZlZCUyNTNEMjU2MCUyM0NGbmF0CnRyb2phbiUzQSUyRiUyRmFhNmRkZDJmLWQxY2YtNGE1Mi1iYTFiLTI2NDBjNDFhNzg1NiU0MDIxOC4xOTAuMjMwLjIwNyUzQTQxMjg4JTNGc2VjdXJpdHklM0R0bHMlMjZzbmklM0RoazEyLmJpbGliaWxpLmNvbSUyNmFsbG93SW5zZWN1cmUlM0QxJTI2dHlwZSUzRHRjcCUyNmhlYWRlclR5cGUlM0Rub25lJTIzSEsKc3MlM0ElMkYlMkZZMmhoWTJoaE1qQXRhV1YwWmkxd2IyeDVNVE13TlRveVJYUlFjVzQyU0ZscVZVNWpTRzlvVEdaVmNFWlJkMjVtYWtORFVUVnRhREZ0U21SRlRVTkNkV04xVjFvNVVERjFaR3RTUzBodVZuaDFielUxYXpGTFdIb3lSbTgyYW5KbmRERTRWelkyYjNCMGVURmxOR0p0TVdwNlprTm1RbUklMjUzRCU0MDg0LjE5LjMxLjYzJTNBNTA4NDElMjNERQoKCiVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQpodHRwcyUzQSUyRiUyRnN1Yi54Zi5mcmVlLmhyJTJGYXV0bw=='))}"
 							id="content">${content}</textarea>
 						<div class="save-container">
 							<button class="save-btn" onclick="saveContent(this)">保存</button>
 							<span class="save-status" id="saveStatus"></span>
 						</div>
+						`}
 						` : '<p>请绑定 <strong>变量名称</strong> 为 <strong>KV</strong> 的KV命名空间</p>'}
 					</div>
 					</section>
@@ -786,6 +816,14 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 					</footer>
 				</div>
 					<script>
+					function enterPass() {
+						const input = document.getElementById('editPassInput');
+						if (!input) return;
+						if (!input.value) { alert('请输入密码'); return; }
+						const u = new URL(window.location.href);
+						u.searchParams.set('pass', input.value);
+						window.location.href = u.href;
+					}
 					function copyToClipboard(text, qrcode) {
 						navigator.clipboard.writeText(text).then(() => {
 							alert('已复制到剪贴板');
@@ -874,8 +912,9 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 										method: 'POST',
 										body: newContent,
 										headers: {
-											'Content-Type': 'text/plain;charset=UTF-8'
-										},
+										'Content-Type': 'text/plain;charset=UTF-8',
+										'X-Edit-Pass': new URL(window.location.href).searchParams.get('pass') || ''
+									},
 										cache: 'no-cache'
 									})
 									.then(response => {
