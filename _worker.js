@@ -533,118 +533,248 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 					<meta charset="utf-8">
 					<meta name="viewport" content="width=device-width, initial-scale=1">
 					<style>
-						body {
-							margin: 0;
-							padding: 15px; /* 调整padding */
-							box-sizing: border-box;
-							font-size: 13px; /* 设置全局字体大小 */
-						}
-						.editor-container {
-							width: 100%;
-							max-width: 100%;
-							margin: 0 auto;
-						}
-						.editor {
-							width: 100%;
-							height: 300px; /* 调整高度 */
-							margin: 15px 0; /* 调整margin */
-							padding: 10px; /* 调整padding */
-							box-sizing: border-box;
-							border: 1px solid #ccc;
-							border-radius: 4px;
-							font-size: 13px;
-							line-height: 1.5;
-							overflow-y: auto;
-							resize: none;
-						}
-						.save-container {
-							margin-top: 8px; /* 调整margin */
-							display: flex;
-							align-items: center;
-							gap: 10px; /* 调整gap */
-						}
-						.save-btn, .back-btn {
-							padding: 6px 15px; /* 调整padding */
-							color: white;
-							border: none;
-							border-radius: 4px;
-							cursor: pointer;
-						}
-						.save-btn {
-							background: #4CAF50;
-						}
-						.save-btn:hover {
-							background: #45a049;
-						}
-						.back-btn {
-							background: #666;
-						}
-						.back-btn:hover {
-							background: #555;
-						}
-						.save-status {
-							color: #666;
-						}
-					</style>
+					:root {
+						--bg: #0d1117;
+						--bg-card: rgba(22, 27, 34, 0.85);
+						--border: rgba(48, 54, 61, 0.9);
+						--text: #c9d1d9;
+						--text-dim: #8b949e;
+						--accent: #22d3ee;
+						--accent-2: #a78bfa;
+					}
+					* { box-sizing: border-box; }
+					body {
+						margin: 0;
+						padding: 24px 16px;
+						background: var(--bg);
+						color: var(--text);
+						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+						font-size: 14px;
+						line-height: 1.6;
+						min-height: 100vh;
+						background-image:
+							radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.08), transparent 40%),
+							radial-gradient(circle at 85% 80%, rgba(167, 139, 250, 0.08), transparent 40%);
+					}
+					.container { max-width: 920px; margin: 0 auto; }
+					.header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+					.header .title {
+						margin: 0 0 6px;
+						font-size: 22px;
+						font-weight: 600;
+						background: linear-gradient(90deg, var(--accent), var(--accent-2));
+						-webkit-background-clip: text;
+						background-clip: text;
+						color: transparent;
+					}
+					.header .subtitle { margin: 0; color: var(--text-dim); font-size: 13px; }
+					.section {
+						margin-bottom: 24px;
+						padding: 18px;
+						background: var(--bg-card);
+						border: 1px solid var(--border);
+						border-radius: 12px;
+						backdrop-filter: blur(8px);
+						-webkit-backdrop-filter: blur(8px);
+					}
+					.section-title {
+						margin: 0 0 14px;
+						padding-left: 10px;
+						font-size: 15px;
+						font-weight: 600;
+						color: var(--accent);
+						border-left: 3px solid var(--accent);
+					}
+					.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+					.sub-card {
+						padding: 12px;
+						background: rgba(13, 17, 23, 0.6);
+						border: 1px solid var(--border);
+						border-radius: 10px;
+						transition: border-color .2s, transform .2s;
+					}
+					.sub-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+					.sub-type {
+						display: inline-block;
+						padding: 2px 8px;
+						margin-bottom: 8px;
+						font-size: 12px;
+						font-weight: 600;
+						color: #0d1117;
+						background: var(--accent);
+						border-radius: 4px;
+					}
+					.sub-type.type-b64 { background: #f59e0b; }
+					.sub-type.type-clash { background: #3fb950; }
+					.sub-type.type-sb { background: #a78bfa; }
+					.sub-type.type-surge { background: #ec4899; }
+					.sub-type.type-loon { background: #38bdf8; }
+					.sub-url {
+						display: block;
+						margin-bottom: 8px;
+						color: var(--accent);
+						text-decoration: none;
+						word-break: break-all;
+						font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+						font-size: 12px;
+						cursor: pointer;
+					}
+					.sub-url:hover { text-decoration: underline; }
+					.qrcode-box { display: flex; justify-content: center; padding: 8px; background: #fff; border-radius: 8px; }
+					.qrcode-box:empty { display: none; }
+					.qrcode-box img, .qrcode-box canvas { display: block; }
+					.toggle-link {
+						display: inline-block;
+						margin-bottom: 12px;
+						padding: 6px 14px;
+						color: var(--accent-2);
+						background: rgba(167, 139, 250, 0.1);
+						border: 1px solid rgba(167, 139, 250, 0.4);
+						border-radius: 6px;
+						text-decoration: none;
+						font-size: 13px;
+						cursor: pointer;
+					}
+					.toggle-link:hover { background: rgba(167, 139, 250, 0.2); }
+					.notice-content { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+					.notice-content .notice-tip { margin: 0 0 8px; color: var(--text-dim); }
+					.notice-content strong { color: var(--accent); }
+					.config-item { margin-bottom: 6px; color: var(--text-dim); }
+					.config-item strong { color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+					.editor-container { width: 100%; max-width: 100%; margin: 0 auto; }
+					.editor {
+						width: 100%;
+						height: 300px;
+						margin: 10px 0;
+						padding: 12px;
+						box-sizing: border-box;
+						background: rgba(13, 17, 23, 0.8);
+						color: var(--text);
+						border: 1px solid var(--border);
+						border-radius: 8px;
+						font-size: 13px;
+						font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+						line-height: 1.5;
+						overflow-y: auto;
+						resize: vertical;
+					}
+					.editor:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15); }
+					.save-container { margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+					.save-btn, .back-btn {
+						padding: 8px 18px;
+						color: #0d1117;
+						font-weight: 600;
+						border: none;
+						border-radius: 6px;
+						cursor: pointer;
+						transition: opacity .2s, transform .2s;
+					}
+					.save-btn { background: linear-gradient(90deg, var(--accent), #0ea5b7); }
+					.save-btn:hover { opacity: .9; transform: translateY(-1px); }
+					.save-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+					.back-btn { background: var(--text-dim); }
+					.back-btn:hover { opacity: .85; }
+					.save-status { color: var(--text-dim); font-size: 12px; }
+					.footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 12px; line-height: 1.8; text-align: center; }
+					.footer a { color: var(--accent); text-decoration: none; }
+					.footer a:hover { text-decoration: underline; }
+					.footer strong { color: var(--text); }
+					@media (max-width: 600px) {
+						body { padding: 12px 10px; font-size: 13px; }
+						.cards-grid { grid-template-columns: 1fr; }
+						.header .title { font-size: 18px; }
+					}
+				</style>
 					<script src="https://cdn.jsdelivr.net/npm/@keeex/qrcodejs-kx@1.0.2/qrcode.min.js"></script>
 				</head>
 				<body>
-					################################################################<br>
-					Subscribe / sub 订阅地址, 点击链接自动 <strong>复制订阅链接</strong> 并 <strong>生成订阅二维码</strong> <br>
-					---------------------------------------------------------------<br>
-					自适应订阅地址:<br>
-					<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?sub','qrcode_0')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/${mytoken}</a><br>
-					<div id="qrcode_0" style="margin: 10px 10px 10px 10px;"></div>
-					Base64订阅地址:<br>
-					<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?b64','qrcode_1')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/${mytoken}?b64</a><br>
-					<div id="qrcode_1" style="margin: 10px 10px 10px 10px;"></div>
-					clash订阅地址:<br>
-					<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?clash','qrcode_2')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/${mytoken}?clash</a><br>
-					<div id="qrcode_2" style="margin: 10px 10px 10px 10px;"></div>
-					singbox订阅地址:<br>
-					<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?sb','qrcode_3')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/${mytoken}?sb</a><br>
-					<div id="qrcode_3" style="margin: 10px 10px 10px 10px;"></div>
-					surge订阅地址:<br>
-					<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?surge','qrcode_4')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/${mytoken}?surge</a><br>
-					<div id="qrcode_4" style="margin: 10px 10px 10px 10px;"></div>
-					loon订阅地址:<br>
-					<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?loon','qrcode_5')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/${mytoken}?loon</a><br>
-					<div id="qrcode_5" style="margin: 10px 10px 10px 10px;"></div>
-					&nbsp;&nbsp;<strong><a href="javascript:void(0);" id="noticeToggle" onclick="toggleNotice()">查看访客订阅∨</a></strong><br>
-					<div id="noticeContent" class="notice-content" style="display: none;">
-						---------------------------------------------------------------<br>
-						访客订阅只能使用订阅功能，无法查看配置页！<br>
-						GUEST（访客订阅TOKEN）: <strong>${guest}</strong><br>
-						---------------------------------------------------------------<br>
-						自适应订阅地址:<br>
-						<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}','guest_0')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/sub?token=${guest}</a><br>
-						<div id="guest_0" style="margin: 10px 10px 10px 10px;"></div>
-						Base64订阅地址:<br>
-						<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&b64','guest_1')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/sub?token=${guest}&b64</a><br>
-						<div id="guest_1" style="margin: 10px 10px 10px 10px;"></div>
-						clash订阅地址:<br>
-						<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&clash','guest_2')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/sub?token=${guest}&clash</a><br>
-						<div id="guest_2" style="margin: 10px 10px 10px 10px;"></div>
-						singbox订阅地址:<br>
-						<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&sb','guest_3')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/sub?token=${guest}&sb</a><br>
-						<div id="guest_3" style="margin: 10px 10px 10px 10px;"></div>
-						surge订阅地址:<br>
-						<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&surge','guest_4')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/sub?token=${guest}&surge</a><br>
-						<div id="guest_4" style="margin: 10px 10px 10px 10px;"></div>
-						loon订阅地址:<br>
-						<a href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&loon','guest_5')" style="color:blue;text-decoration:underline;cursor:pointer;">https://${url.hostname}/sub?token=${guest}&loon</a><br>
-						<div id="guest_5" style="margin: 10px 10px 10px 10px;"></div>
-					</div>
-					---------------------------------------------------------------<br>
-					################################################################<br>
-					订阅转换配置<br>
-					---------------------------------------------------------------<br>
-					SUBAPI（订阅转换后端）: <strong>${subProtocol}://${subConverter}</strong><br>
-					SUBCONFIG（订阅转换配置文件）: <strong>${subConfig}</strong><br>
-					---------------------------------------------------------------<br>
-					################################################################<br>
-					${FileName} 汇聚订阅编辑: 
-					<div class="editor-container">
+					<div class="container">
+					<header class="header">
+						<h1 class="title">${FileName} 订阅中心</h1>
+						<p class="subtitle">点击订阅地址自动 <strong>复制订阅链接</strong> 并 <strong>生成订阅二维码</strong></p>
+					</header>
+					<section class="section">
+						<h2 class="section-title">订阅地址</h2>
+						<div class="cards-grid">
+							<div class="sub-card">
+								<span class="sub-type">自适应</span>
+								<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?sub','qrcode_0')">https://${url.hostname}/${mytoken}</a>
+								<div id="qrcode_0" class="qrcode-box"></div>
+							</div>
+							<div class="sub-card">
+								<span class="sub-type type-b64">Base64</span>
+								<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?b64','qrcode_1')">https://${url.hostname}/${mytoken}?b64</a>
+								<div id="qrcode_1" class="qrcode-box"></div>
+							</div>
+							<div class="sub-card">
+								<span class="sub-type type-clash">clash</span>
+								<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?clash','qrcode_2')">https://${url.hostname}/${mytoken}?clash</a>
+								<div id="qrcode_2" class="qrcode-box"></div>
+							</div>
+							<div class="sub-card">
+								<span class="sub-type type-sb">singbox</span>
+								<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?sb','qrcode_3')">https://${url.hostname}/${mytoken}?sb</a>
+								<div id="qrcode_3" class="qrcode-box"></div>
+							</div>
+							<div class="sub-card">
+								<span class="sub-type type-surge">surge</span>
+								<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?surge','qrcode_4')">https://${url.hostname}/${mytoken}?surge</a>
+								<div id="qrcode_4" class="qrcode-box"></div>
+							</div>
+							<div class="sub-card">
+								<span class="sub-type type-loon">loon</span>
+								<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/${mytoken}?loon','qrcode_5')">https://${url.hostname}/${mytoken}?loon</a>
+								<div id="qrcode_5" class="qrcode-box"></div>
+							</div>
+						</div>
+					</section>
+					<section class="section">
+						<a href="javascript:void(0);" id="noticeToggle" class="toggle-link" onclick="toggleNotice()">查看访客订阅 ∨</a>
+						<div id="noticeContent" class="notice-content" style="display: none;">
+							<p class="notice-tip">访客订阅只能使用订阅功能，无法查看配置页！</p>
+							<p>GUEST（访客订阅TOKEN）: <strong>${guest}</strong></p>
+							<div class="cards-grid">
+								<div class="sub-card">
+									<span class="sub-type">自适应</span>
+									<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}','guest_0')">https://${url.hostname}/sub?token=${guest}</a>
+									<div id="guest_0" class="qrcode-box"></div>
+								</div>
+								<div class="sub-card">
+									<span class="sub-type type-b64">Base64</span>
+									<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&b64','guest_1')">https://${url.hostname}/sub?token=${guest}&b64</a>
+									<div id="guest_1" class="qrcode-box"></div>
+								</div>
+								<div class="sub-card">
+									<span class="sub-type type-clash">clash</span>
+									<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&clash','guest_2')">https://${url.hostname}/sub?token=${guest}&clash</a>
+									<div id="guest_2" class="qrcode-box"></div>
+								</div>
+								<div class="sub-card">
+									<span class="sub-type type-sb">singbox</span>
+									<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&sb','guest_3')">https://${url.hostname}/sub?token=${guest}&sb</a>
+									<div id="guest_3" class="qrcode-box"></div>
+								</div>
+								<div class="sub-card">
+									<span class="sub-type type-surge">surge</span>
+									<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&surge','guest_4')">https://${url.hostname}/sub?token=${guest}&surge</a>
+									<div id="guest_4" class="qrcode-box"></div>
+								</div>
+								<div class="sub-card">
+									<span class="sub-type type-loon">loon</span>
+									<a class="sub-url" href="javascript:void(0)" onclick="copyToClipboard('https://${url.hostname}/sub?token=${guest}&loon','guest_5')">https://${url.hostname}/sub?token=${guest}&loon</a>
+									<div id="guest_5" class="qrcode-box"></div>
+								</div>
+							</div>
+						</div>
+					</section>
+					<section class="section">
+						<h2 class="section-title">订阅转换配置</h2>
+						<div class="config-item">SUBAPI（订阅转换后端）: <strong>${subProtocol}://${subConverter}</strong></div>
+						<div class="config-item">SUBCONFIG（订阅转换配置文件）: <strong>${subConfig}</strong></div>
+					</section>
+					<section class="section">
+						<h2 class="section-title">${FileName} 汇聚订阅编辑</h2>
+						<div class="editor-container">
 						${hasKV ? `
 						<textarea class="editor" 
 							placeholder="${decodeURIComponent(atob('TElOSyVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNCVCOCVBQSVFOCU4QSU4MiVFNyU4MiVCOSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQp2bGVzcyUzQSUyRiUyRjI0NmFhNzk1LTA2MzctNGY0Yy04ZjY0LTJjOGZiMjRjMWJhZCU0MDEyNy4wLjAuMSUzQTEyMzQlM0ZlbmNyeXB0aW9uJTNEbm9uZSUyNnNlY3VyaXR5JTNEdGxzJTI2c25pJTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2YWxsb3dJbnNlY3VyZSUzRDElMjZ0eXBlJTNEd3MlMjZob3N0JTNEVEcuQ01MaXVzc3NzLmxvc2V5b3VyaXAuY29tJTI2cGF0aCUzRCUyNTJGJTI1M0ZlZCUyNTNEMjU2MCUyM0NGbmF0CnRyb2phbiUzQSUyRiUyRmFhNmRkZDJmLWQxY2YtNGE1Mi1iYTFiLTI2NDBjNDFhNzg1NiU0MDIxOC4xOTAuMjMwLjIwNyUzQTQxMjg4JTNGc2VjdXJpdHklM0R0bHMlMjZzbmklM0RoazEyLmJpbGliaWxpLmNvbSUyNmFsbG93SW5zZWN1cmUlM0QxJTI2dHlwZSUzRHRjcCUyNmhlYWRlclR5cGUlM0Rub25lJTIzSEsKc3MlM0ElMkYlMkZZMmhoWTJoaE1qQXRhV1YwWmkxd2IyeDVNVE13TlRveVJYUlFjVzQyU0ZscVZVNWpTRzlvVEdaVmNFWlJkMjVtYWtORFVUVnRhREZ0U21SRlRVTkNkV04xVjFvNVVERjFaR3RTUzBodVZuaDFielUxYXpGTFdIb3lSbTgyYW5KbmRERTRWelkyYjNCMGVURmxOR0p0TVdwNlprTm1RbUklMjUzRCU0MDg0LjE5LjMxLjYzJTNBNTA4NDElMjNERQoKCiVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNyVBNCVCQSVFNCVCRSU4QiVFRiVCQyU4OCVFNCVCOCU4MCVFOCVBMSU4QyVFNCVCOCU4MCVFNiU5RCVBMSVFOCVBRSVBMiVFOSU5OCU4NSVFOSU5MyVCRSVFNiU4RSVBNSVFNSU4RCVCMyVFNSU4RiVBRiVFRiVCQyU4OSVFRiVCQyU5QQpodHRwcyUzQSUyRiUyRnN1Yi54Zi5mcmVlLmhyJTJGYXV0bw=='))}"
@@ -655,10 +785,12 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 						</div>
 						` : '<p>请绑定 <strong>变量名称</strong> 为 <strong>KV</strong> 的KV命名空间</p>'}
 					</div>
-					<br>
-					################################################################<br>
+					</section>
+					<footer class="footer">
 					${decodeURIComponent(atob('dGVsZWdyYW0lMjAlRTQlQkElQTQlRTYlQjUlODElRTclQkUlQTQlMjAlRTYlOEElODAlRTYlOUMlQUYlRTUlQTQlQTclRTQlQkQlQUMlN0UlRTUlOUMlQTglRTclQkElQkYlRTUlOEYlOTElRTclODklOEMhJTNDYnIlM0UKJTNDYSUyMGhyZWYlM0QlMjdodHRwcyUzQSUyRiUyRnQubWUlMkZDTUxpdXNzc3MlMjclM0VodHRwcyUzQSUyRiUyRnQubWUlMkZDTUxpdXNzc3MlM0MlMkZhJTNFJTNDYnIlM0UKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tJTNDYnIlM0UKZ2l0aHViJTIwJUU5JUExJUI5JUU3JTlCJUFFJUU1JTlDJUIwJUU1JTlEJTgwJTIwU3RhciFTdGFyIVN0YXIhISElM0NiciUzRQolM0NhJTIwaHJlZiUzRCUyN2h0dHBzJTNBJTJGJTJGZ2l0aHViLmNvbSUyRmNtbGl1JTJGQ0YtV29ya2Vycy1TVUIlMjclM0VodHRwcyUzQSUyRiUyRmdpdGh1Yi5jb20lMkZjbWxpdSUyRkNGLVdvcmtlcnMtU1VCJTNDJTJGYSUzRSUzQ2JyJTNFCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSUzQ2JyJTNFCiUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMyUyMw=='))}
 					<br><br>UA: <strong>${request.headers.get('User-Agent')}</strong>
+					</footer>
+				</div>
 					<script>
 					function copyToClipboard(text, qrcode) {
 						navigator.clipboard.writeText(text).then(() => {
