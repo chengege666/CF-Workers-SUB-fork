@@ -119,3 +119,20 @@
 
 # 🙏 致谢
 [Alice Networks LTD](https://alicenetworks.net/)，[mianayang](https://github.com/mianayang/myself/blob/main/cf-workers/sub/sub.js)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR/tree/master/Clash/config)、[肥羊](https://sub.v1.mk/)
+
+
+## 🔒 汇聚订阅编辑加密保护
+
+新增密码保护功能，仅对「汇聚订阅编辑」模块生效，订阅地址等其他内容正常显示。
+
+### 使用方法
+1. 在 Cloudflare Workers/Pages 控制台 → 设置 → 变量中添加：
+   - **变量名**：`ADMIN_PASSWORD`
+   - **值**：自定义管理密码（建议使用「加密变量/Secret」类型）
+2. 部署后，访问订阅编辑页，「汇聚订阅编辑」模块将显示密码输入框，未解锁时编辑区高斯模糊、不可操作
+3. 输入正确密码后解锁，同一浏览器下次访问直接进入（localStorage 记住解锁状态）
+
+### 变量说明
+| 变量名 | 示例 | 必填 | 备注 |
+|-|-|-|-|
+| ADMIN_PASSWORD | `your_password` | ❌ | 汇聚订阅编辑模块的管理密码。未配置则不启用加密保护 |
