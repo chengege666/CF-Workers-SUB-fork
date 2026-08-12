@@ -684,10 +684,77 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 						.cards-grid { grid-template-columns: 1fr; }
 						.header .title { font-size: 18px; }
 					}
+					/* ===== 解锁密码保护 ===== */
+					body.locked .container {
+						filter: blur(20px);
+						pointer-events: none;
+						user-select: none;
+					}
+					.unlock-overlay {
+						position: fixed;
+						inset: 0;
+						z-index: 999;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						padding: 16px;
+						background: var(--bg);
+					}
+					.unlock-overlay.hidden { display: none; }
+					.unlock-card {
+						width: 100%;
+						max-width: 360px;
+						padding: 28px 24px;
+						background: var(--bg-card);
+						border: 1px solid var(--border);
+						border-radius: 12px;
+						text-align: center;
+					}
+					.unlock-card h2 { margin: 0 0 6px; font-size: 18px; color: var(--text); }
+					.unlock-card p { margin: 0 0 14px; color: var(--text-dim); font-size: 13px; }
+					.unlock-error { margin: 0 0 12px; color: #f85149; font-size: 13px; min-height: 18px; }
+					.unlock-card input[type="password"] {
+						width: 100%;
+						padding: 10px 12px;
+						box-sizing: border-box;
+						margin-bottom: 12px;
+						background: rgba(13, 17, 23, 0.8);
+						color: var(--text);
+						border: 1px solid var(--border);
+						border-radius: 8px;
+						font-size: 14px;
+						outline: none;
+					}
+					.unlock-card input[type="password"]:focus {
+						border-color: var(--accent);
+						box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+					}
+					.unlock-btn {
+						width: 100%;
+						padding: 10px;
+						color: #0d1117;
+						font-weight: 600;
+						font-size: 14px;
+						background: linear-gradient(90deg, var(--accent), #0ea5b7);
+						border: none;
+						border-radius: 8px;
+						cursor: pointer;
+						transition: opacity .2s;
+					}
+					.unlock-btn:hover { opacity: .9; }
 				</style>
 					<script src="https://cdn.jsdelivr.net/npm/@keeex/qrcodejs-kx@1.0.2/qrcode.min.js"></script>
 				</head>
 				<body>
+					<div class="unlock-overlay" id="unlockOverlay">
+						<div class="unlock-card">
+							<h2>${FileName} 订阅中心</h2>
+							<p>请输入管理密码解锁</p>
+							<p class="unlock-error" id="unlockError"></p>
+							<input type="password" id="unlockInput" placeholder="请输入密码" autocomplete="off">
+							<button class="unlock-btn" onclick="unlockPage()">解锁</button>
+						</div>
+					</div>
 					<div class="container">
 					<header class="header">
 						<h1 class="title">${FileName} 订阅中心</h1>
@@ -786,6 +853,45 @@ async function KV(request, env, txt = 'ADD.txt', guest) {
 					</footer>
 				</div>
 					<script>
+					// ===== 解锁密码保护 =====
+					const ADMIN_PASSWORD = new TextDecoder().decode(Uint8Array.from(atob('${btoa(String.fromCharCode.apply(null, new TextEncoder().encode(env.ADMIN_PASSWORD || '')))}'), function (c) { return c.charCodeAt(0); }));
+					const UNLOCK_KEY = 'sub_editor_unlocked';
+
+					function unlockPage() {
+						const input = document.getElementById('unlockInput');
+						const error = document.getElementById('unlockError');
+						if (input.value === ADMIN_PASSWORD) {
+							localStorage.setItem(UNLOCK_KEY, '1');
+							document.getElementById('unlockOverlay').classList.add('hidden');
+							document.body.classList.remove('locked');
+						} else {
+							error.textContent = '密码错误，请重试';
+							input.value = '';
+							input.focus();
+						}
+					}
+
+					(function initUnlock() {
+						const overlay = document.getElementById('unlockOverlay');
+						const input = document.getElementById('unlockInput');
+						if (!overlay || !input) return;
+						// 未配置 ADMIN_PASSWORD 环境变量时不启用锁定
+						if (!ADMIN_PASSWORD) {
+							overlay.classList.add('hidden');
+							return;
+						}
+						// 本浏览器已解锁过则直接进入
+						if (localStorage.getItem(UNLOCK_KEY) === '1') {
+							overlay.classList.add('hidden');
+							return;
+						}
+						document.body.classList.add('locked');
+						input.focus();
+						input.addEventListener('keydown', function (e) {
+							if (e.key === 'Enter') unlockPage();
+						});
+					})();
+
 					function copyToClipboard(text, qrcode) {
 						navigator.clipboard.writeText(text).then(() => {
 							alert('已复制到剪贴板');
